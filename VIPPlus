@@ -1,0 +1,659 @@
+package net.VIPPlus;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Effect;
+import org.bukkit.Sound;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class VIPPlus extends JavaPlugin implements Listener {
+	
+	
+	public static FileConfiguration Yapilandirma = null;
+	public static File Dosya = null;
+	public static YamlConfiguration Dil = null;
+	public static File Dil_Dosyasi = null;
+	Guncelleyici Guncelleme = new Guncelleyici(this);
+	public String Adres = "http://yadi.sk/d/S-c1eAqxLsAfg";
+	public String GuncellemeYolu = "plugins" + File.separator + "VIPPlus.jar";
+	public static YamlConfiguration VarsayilanYapilandirma;
+	public HashMap<String, Long> Rejenerasyon_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Ceviklik_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Ates_Direnci_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Iyilestirme_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Gece_Gorus_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Gorunmezlik_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Ziplama_Destegi_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Direnc_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Kuvvet_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Acele_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Su_Altinda_Nefes_Alma_Bekleme_Suresi = new HashMap<String, Long>();
+	public HashMap<String, Long> Saglik_Arttirici_Bekleme_Suresi = new HashMap<String, Long>();
+	
+	public void onEnable() {
+	    PluginManager EklentiYoneticisi = Bukkit.getPluginManager();
+	    EklentiYoneticisi.registerEvents(this, this);
+	    getLogger().info(getDescription().getName() + " Versiyon " + getDescription().getVersion() + " Aktif Edildi!");
+	    getLogger().info("Guncellemeler Kontrol Ediliyor...");
+	    if(Guncelleme.GuncellemeKontrol().booleanValue()) {
+	    	EklentiYoneticisi.disablePlugin(this);
+	    	for (int i = 0; i < 20; i++) {
+	    		getLogger().info(getDescription().getName() + " Guncelleme Basarili! " + getDescription().getName() + " Versiyon " + getDescription().getVersion() + " Etkinlestirmek Icin Sunucuyu Yeniden Baslatmaniz Gerekiyor!");
+	    		EklentiYoneticisi.disablePlugin(this);
+	    		EklentiYoneticisi.enablePlugin(this);
+	    	}
+	    }
+		YapilandirmaYukle();
+		DilDosyasiniYukle();
+	}
+	
+	public void onDisable() {
+		
+		getLogger().info(getDescription().getName() + " Versiyon " + getDescription().getVersion() + " Pasif Durumda!");
+	}
+	
+	public void YapilandirmaYukle() {
+		if (Dosya == null || Yapilandirma == null) {
+		Yapilandirma = getConfig();
+		Yapilandirma.options().copyDefaults(true);
+		Dosya = new File(getDataFolder(), "config.yml");
+		if (!Dosya.exists()) {
+		try {
+			Dosya.mkdir();
+			Yapilandirma.save(Dosya);
+		} catch (IOException Istisna) {
+			getServer().getConsoleSender().sendMessage("[" + getDescription().getName() + "] " + ChatColor.RED + Dosya +" Dosyasi Kaydedilemedi!");
+			Istisna.printStackTrace();
+		}
+		}
+		}
+	}
+	
+	public void YapilandirmaYenile() {
+		Yapilandirma = YamlConfiguration.loadConfiguration(Dosya);
+		Dil = YamlConfiguration.loadConfiguration(Dil_Dosyasi);
+		reloadConfig();
+		saveConfig();
+		PluginManager EklentiYoneticisi = Bukkit.getPluginManager();
+		VIPPlus EklentiAdi = (VIPPlus) EklentiYoneticisi.getPlugin("VIPPlus");
+		EklentiYoneticisi.disablePlugin(EklentiAdi);
+		EklentiYoneticisi.enablePlugin(EklentiAdi);
+        reloadConfig();
+        saveConfig();
+		YapilandirmaYukle();
+		DilDosyasiniYukle();
+	}
+	
+	public void DilDosyasiniYukle() {
+		
+		File dilDosyasi = new File(getDataFolder(), "mesajlar.lang");
+		if (!dilDosyasi.exists()) {
+			try {
+				getDataFolder().mkdir();
+				dilDosyasi.createNewFile();
+				InputStream TanimliYapilandirmaIzle = this.getResource("mesajar.lang");
+				if (TanimliYapilandirmaIzle != null) {
+					VarsayilanYapilandirma = YamlConfiguration.loadConfiguration(TanimliYapilandirmaIzle);
+					VarsayilanYapilandirma.save(dilDosyasi);
+					DilDosyasi.DosyaKoy(VarsayilanYapilandirma);
+					VarsayilanYapilandirma();
+					
+				}
+			} catch(IOException Istisna) {
+				Istisna.printStackTrace();
+				getServer().getConsoleSender().sendMessage("[" + getDescription().getName() + "]" + ChatColor.RED + " Dil Dosyasi Olusturulamadi!");
+				getServer().getConsoleSender().sendMessage("[" + getDescription().getName() + "]" + ChatColor.AQUA + " Hatadan Dolayi Eklenti Pasif Birakiliyor.");
+				this.setEnabled(false);
+			}
+		}
+		YamlConfiguration yapilandirma = YamlConfiguration.loadConfiguration(dilDosyasi);
+		for (DilDosyasi Oge : DilDosyasi.values()) {
+			if (yapilandirma.getString(Oge.YolOlma()) == null) {
+				yapilandirma.set(Oge.YolOlma(), Oge.VarsayilanOlma());
+			}
+		}
+		DilDosyasi.DosyaKoy(yapilandirma);
+		VIPPlus.Dil = yapilandirma;
+		VIPPlus.Dil_Dosyasi = dilDosyasi;
+		try {
+			yapilandirma.save(DilDosyasiOlma());
+		} catch(IOException Istisna) {
+			getServer().getConsoleSender().sendMessage("[" + getDescription().getName() + "]" + ChatColor.RED + " plugins/VIPPlus/mesajlar.lang Dosyasi Kaydedilemedi!");
+	        Istisna.printStackTrace();
+		}
+	}
+	
+	public YamlConfiguration DilOlma() {
+		
+		return Dil;
+	}
+	
+	public File DilDosyasiOlma() {
+		
+		return Dil_Dosyasi;
+	}
+	
+	public YamlConfiguration VarsayilanYapilandirma() {
+		
+		return VarsayilanYapilandirma;
+	}
+	
+	public boolean onCommand(CommandSender Gonderen, Command Komut, String KomutEtiketi, String[] Arguman) {
+		Player Oyuncu = (Player) Gonderen;
+		if (Komut.getName().equalsIgnoreCase("vipplus")) {
+        	if (Oyuncu.hasPermission("vipplus.anakomutmesaji")) {
+			if (Arguman.length == 0) {
+				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Ana_Komut_Mesaji);
+				return true;
+			}
+        	}
+			else {
+				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+				return true;
+			}
+            if (Arguman.length == 1) {
+            	if (Arguman[0].equalsIgnoreCase("yardimlistesi") || Arguman[0].equalsIgnoreCase("yl")) {
+            	if (Oyuncu.hasPermission("vipplus.yardimlistesi")) {
+                	if (Yapilandirma.getBoolean("Genel_Ayarlar.Yardim_Listesi", true)) {
+            		List<String> Yardim_Listesi = VIPPlus.Yapilandirma.getStringList("Yardim_Listesi");
+            		for (String Dize : Yardim_Listesi)
+            			Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + Dize.replace('&', '§'));
+            		return true;
+            	}
+            	}
+    			else {
+    				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+    				return true;
+    			}
+               }
+            }
+            if (Arguman.length == 1) {
+            	if (Arguman[0].equalsIgnoreCase("komutlistesi") || Arguman[0].equalsIgnoreCase("kl")) {
+            	if (Oyuncu.hasPermission("vipplus.komutlistesi")) {
+                	if (Yapilandirma.getBoolean("Genel_Ayarlar.Komut_Listesi", true)) {
+            		List<String> Komut_Listesi = VIPPlus.Yapilandirma.getStringList("Komut_Listesi");
+            		for (String Dize : Komut_Listesi)
+            			Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + Dize.replace('&', '§'));
+            		return true;
+            	}
+            	}
+    			else {
+    				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+    				return true;
+    			}
+               }
+            }
+            if (Arguman.length == 1) {
+                if (Arguman[0].equalsIgnoreCase("yenile") || Arguman[0].equalsIgnoreCase("y")) {
+                	if (Oyuncu.hasPermission("vipplus.yenile")) {
+                    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Eklenti_Dosyalari_Yeniden_Yukleniyor_Mesaji);
+                	YapilandirmaYenile();
+                	Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Eklenti_Dosyalari_Yeniden_Yuklendi_Mesaji);
+                	}
+        			else { Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji); }
+                    return true;
+                }
+            }
+            if (Arguman.length == 1) {
+                if (Arguman[0].equalsIgnoreCase("pasif") || Arguman[0].equalsIgnoreCase("p")) {
+                	if (Oyuncu.hasPermission("vipplus.pasif")) {
+                    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Oyun_Ici_Eklenti_Pasif_Mesaji);
+                	Bukkit.getServer().getPluginManager().disablePlugin(this);
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+            	if (Arguman[0].equalsIgnoreCase("sut") || Arguman[0].equalsIgnoreCase("s")) {
+            		if (Oyuncu.hasPermission("vipplus.sut")) {
+            			for (PotionEffect Iksir_Etkisi : Oyuncu.getActivePotionEffects()) {
+            				Oyuncu.removePotionEffect(Iksir_Etkisi.getType());
+            				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Iksir_Etkisi_Kaldirildi_Mesaji);
+            			}
+            		}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+            	}
+            }
+            if (Arguman.length == 1) {
+                long Rejenerasyon_Bekleme_Suresi;
+                Rejenerasyon_Bekleme_Suresi = Yapilandirma.getInt("Rejenerasyon.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Rejenerasyon.Rejenerasyon", true))
+                if (Arguman[0].equalsIgnoreCase("rejenerasyon") || Arguman[0].equalsIgnoreCase("r")) {
+                	if (Oyuncu.hasPermission("vipplus.rejenerasyon")) {
+            	    if (this.Rejenerasyon_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	        Rejenerasyon_Bekleme_Suresi = ((Long)this.Rejenerasyon_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Rejenerasyon_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Rejenerasyon_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Rejenerasyon.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Rejenerasyon Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Rejenerasyon_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Rejenerasyon_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Rejenerasyon.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Rejenerasyon_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Rejenerasyon.Efekt", true)) {
+                	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Rejenerasyon.Efekt_Cesiti")), 1);
+                	}
+                	if (Yapilandirma.getBoolean("Rejenerasyon.Ses_Efekt", true)) {
+                	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Rejenerasyon.Ses_Efekti")), Yapilandirma.getInt("Rejenerasyon.Ses_Etki_Alani"), Yapilandirma.getInt("Rejenerasyon.Ses_Seviyesi"));
+                	}
+            		Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Yapilandirma.getInt("Rejenerasyon.Etki_Suresi"), Yapilandirma.getInt("Rejenerasyon.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Ceviklik_Bekleme_Suresi;
+                Ceviklik_Bekleme_Suresi = Yapilandirma.getInt("Ceviklik.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Ceviklik.Ceviklik", true))
+                if (Arguman[0].equalsIgnoreCase("ceviklik") || Arguman[0].equalsIgnoreCase("c")) {
+                	if (Oyuncu.hasPermission("vipplus.ceviklik")) {
+            	    if (this.Ceviklik_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Ceviklik_Bekleme_Suresi = ((Long)this.Ceviklik_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Ceviklik_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Ceviklik_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Ceviklik.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Cevikligi Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Ceviklik_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Ceviklik_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Ceviklik.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Ceviklik_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Ceviklik.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Ceviklik.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Ceviklik.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Ceviklik.Ses_Efekti")), Yapilandirma.getInt("Ceviklik.Ses_Etki_Alani"), Yapilandirma.getInt("Ceviklik.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Yapilandirma.getInt("Ceviklik.Etki_Suresi"), Yapilandirma.getInt("Ceviklik.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Ates_Direnci_Bekleme_Suresi;
+                Ates_Direnci_Bekleme_Suresi = Yapilandirma.getInt("Ayarlar.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Ates_Direnci.Ates_Direnci", true))
+                if (Arguman[0].equalsIgnoreCase("atesdirenci") || Arguman[0].equalsIgnoreCase("ad")) {
+                	if (Oyuncu.hasPermission("vipplus.atesdirenci")) {
+            	    if (this.Ates_Direnci_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Ates_Direnci_Bekleme_Suresi = ((Long)this.Ates_Direnci_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Ates_Direnci_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Ates_Direnci_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Ates_Direnci.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Ates Direncini Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Ates_Direnci_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Ates_Direnci_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Ates_Direnci.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Ates_Direnci_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Ates_Direnci.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Ates_Direnci.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Ayarlar.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Ates_Direnci.Ses_Efekti")), Yapilandirma.getInt("Ates_Direnci.Ses_Etki_Alani"), Yapilandirma.getInt("Ates_Direnci.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Yapilandirma.getInt("Ates_Direnci.Etki_Suresi"), Yapilandirma.getInt("Ates_Direnci.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Iyilestirme_Bekleme_Suresi;
+                Iyilestirme_Bekleme_Suresi = Yapilandirma.getInt("Iyilestirme.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Iyilestirme.Iyilestirme", true))
+                if (Arguman[0].equalsIgnoreCase("iyilestirme") || Arguman[0].equalsIgnoreCase("i")) {
+                	if (Oyuncu.hasPermission("vipplus.iyilestirme")) {
+            	    if (this.Iyilestirme_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Iyilestirme_Bekleme_Suresi = ((Long)this.Iyilestirme_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Iyilestirme_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Iyilestirme_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Iyilestirme.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Iyilestirme Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Iyilestirme_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Iyilestirme_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Iyilestirme.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Iyilestirme_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Iyilestirme.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Iyilestirme.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Iyilestirme.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Iyilestirme.Ses_Efekti")), Yapilandirma.getInt("Iyilestirme.Ses_Etki_Alani"), Yapilandirma.getInt("Iyilestirme.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, Yapilandirma.getInt("Iyilestirme.Etki_Suresi"), Yapilandirma.getInt("Iyilestirme.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Gece_Gorus_Bekleme_Suresi;
+                Gece_Gorus_Bekleme_Suresi = Yapilandirma.getInt("Gece_Gorus.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Gece_Gorus.Gece_Gorus", true))
+                if (Arguman[0].equalsIgnoreCase("gecegorus") || Arguman[0].equalsIgnoreCase("gg")) {
+                	if (Oyuncu.hasPermission("vipplus.gecegorus")) {
+            	    if (this.Gece_Gorus_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Gece_Gorus_Bekleme_Suresi = ((Long)this.Gece_Gorus_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Gece_Gorus_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Gece_Gorus_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Gece_Gorus.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Gece Gorus Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Gece_Gorus_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Gece_Gorus_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Gece_Gorus.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Gece_Gorus_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Gece_Gorus.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Gece_Gorus.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Gece_Gorus.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Gece_Gorus.Ses_Efekti")), Yapilandirma.getInt("Gece_Gorus.Ses_Etki_Alani"), Yapilandirma.getInt("Gece_Gorus.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, Yapilandirma.getInt("Gece_Gorus.Etki_Suresi"), Yapilandirma.getInt("Gece_Gorus.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Kuvvet_Bekleme_Suresi;
+                Kuvvet_Bekleme_Suresi = Yapilandirma.getInt("Kuvvet.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Kuvvet.Kuvvet", true))
+                if (Arguman[0].equalsIgnoreCase("kuvvet") || Arguman[0].equalsIgnoreCase("k")) {
+                	if (Oyuncu.hasPermission("vipplus.kuvvet")) {
+            	    if (this.Kuvvet_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Kuvvet_Bekleme_Suresi = ((Long)this.Kuvvet_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Kuvvet_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Kuvvet_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Kuvvet.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Kuvvet Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Kuvvet_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Kuvvet_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Kuvvet.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Kuvvet_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Kuvvet.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Kuvvet.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Kuvvet.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Kuvvet.Ses_Efekti")), Yapilandirma.getInt("Kuvvet.Ses_Etki_Alani"), Yapilandirma.getInt("Kuvvet.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Yapilandirma.getInt("Kuvvet.Etki_Suresi"), Yapilandirma.getInt("Kuvvet.Etki_Gucu")));
+                	}
+        			else { Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji); }
+                    return true;
+                }
+            }
+            if (Arguman.length == 1) {
+                long Gorunmezlik_Bekleme_Suresi;
+                Gorunmezlik_Bekleme_Suresi = Yapilandirma.getInt("Gorunmezlik.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Gorunmezlik.Gorunmezlik", true))
+                if (Arguman[0].equalsIgnoreCase("gorunmezlik") || Arguman[0].equalsIgnoreCase("g")) {
+                	if (Oyuncu.hasPermission("vipplus.gorunmezlik")) {
+            	    if (this.Gorunmezlik_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Gorunmezlik_Bekleme_Suresi = ((Long)this.Gorunmezlik_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Gorunmezlik_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Gorunmezlik_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Gorunmezlik.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Gorunmezligi Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Gorunmezlik_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Gorunmezlik_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Gorunmezlik.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Gorunmezlik_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Gorunmezlik.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Gorunmezlik.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Gorunmezlik.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Gorunmezlik.Ses_Efekti")), Yapilandirma.getInt("Gorunmezlik.Ses_Etki_Alani"), Yapilandirma.getInt("Gorunmezlik.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Yapilandirma.getInt("Gorunmezlik.Etki_Suresi"), Yapilandirma.getInt("Gorunmezlik.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Ziplama_Destegi_Bekleme_Suresi;
+                Ziplama_Destegi_Bekleme_Suresi = Yapilandirma.getInt("Ziplama_Destegi.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Ziplama_Destegi.Ziplama_Destegi", true))
+                if (Arguman[0].equalsIgnoreCase("ziplamadestegi") || Arguman[0].equalsIgnoreCase("zd")) {
+                	if (Oyuncu.hasPermission("vipplus.ziplamadestegi")) {
+            	    if (this.Ziplama_Destegi_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Ziplama_Destegi_Bekleme_Suresi = ((Long)this.Ziplama_Destegi_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Ziplama_Destegi_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Ziplama_Destegi_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Ziplama_Destegi.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Ziplama Destegini Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Ziplama_Destegi_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Ziplama_Destegi_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Ziplama_Destegi.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Ziplama_Destegi_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Ziplama_Destegi.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Ziplama_Destegi.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Ziplama_Destegi.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Ziplama_Destegi.Ses_Efekti")), Yapilandirma.getInt("Ziplama_Destegi.Ses_Etki_Alani"), Yapilandirma.getInt("Ziplama_Destegi.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, Yapilandirma.getInt("Ziplama_Destegi.Etki_Suresi"), Yapilandirma.getInt("Ziplama_Destegi.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Direnc_Bekleme_Suresi;
+                Direnc_Bekleme_Suresi = Yapilandirma.getInt("Direnc.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Direnc.Direnc", true))
+                if (Arguman[0].equalsIgnoreCase("direnc") || Arguman[0].equalsIgnoreCase("d")) {
+                	if (Oyuncu.hasPermission("vipplus.direnc")) {
+            	    if (this.Direnc_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Direnc_Bekleme_Suresi = ((Long)this.Direnc_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Direnc_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Direnc_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Direnc.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Direnc Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Direnc_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Direnc_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Direnc.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Direnc_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Direnc.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Direnc.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Direnc.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Direnc.Ses_Efekti")), Yapilandirma.getInt("Direnc.Ses_Etki_Alani"), Yapilandirma.getInt("Direnc.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Yapilandirma.getInt("Direnc.Etki_Suresi"), Yapilandirma.getInt("Direnc.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Acele_Bekleme_Suresi;
+                Acele_Bekleme_Suresi = Yapilandirma.getInt("Acele.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Acele.Acele", true))
+                if (Arguman[0].equalsIgnoreCase("acele") || Arguman[0].equalsIgnoreCase("a")) {
+                  	if (Oyuncu.hasPermission("vipplus.acele")) {
+            	    if (this.Acele_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Acele_Bekleme_Suresi = ((Long)this.Acele_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Acele_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Acele_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Acele.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Acele Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Acele_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Acele_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Acele.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Acele_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Acele.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Acele.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Acele.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Acele.Ses_Efekti")), Yapilandirma.getInt("Acele.Ses_Etki_Alani"), Yapilandirma.getInt("Acele.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING, Yapilandirma.getInt("Acele.Etki_Suresi"), Yapilandirma.getInt("Acele.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Su_Altinda_Nefes_Alma_Bekleme_Suresi;
+                Su_Altinda_Nefes_Alma_Bekleme_Suresi = Yapilandirma.getInt("Su_Altinda_Nefes_Alma.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Su_Altinda_Nefes_Alma.Su_Altinda_Nefes_Alma", true))
+                if (Arguman[0].equalsIgnoreCase("sualtindanefesalma") || Arguman[0].equalsIgnoreCase("sana")) {
+                	if (Oyuncu.hasPermission("vipplus.sualtindanefesalma")) {
+            	    if (this.Su_Altinda_Nefes_Alma_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Su_Altinda_Nefes_Alma_Bekleme_Suresi = ((Long)this.Su_Altinda_Nefes_Alma_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Su_Altinda_Nefes_Alma_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Su_Altinda_Nefes_Alma_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Su_Altinda_Nefes_Alma.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Su Altinda Nefes Alma Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Su_Altinda_Nefes_Alma_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Su_Altinda_Nefes_Alma_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Su_Altinda_Nefes_Alma.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Su_Altinda_Nefes_Alma_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Su_Altinda_Nefes_Alma.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Su_Altinda_Nefes_Alma.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Su_Altinda_Nefes_Alma.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Su_Altinda_Nefes_Alma.Ses_Efekti")), Yapilandirma.getInt("Su_Altinda_Nefes_Alma.Ses_Etki_Alani"), Yapilandirma.getInt("Su_Altinda_Nefes_Alma.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, Yapilandirma.getInt("Su_Altinda_Nefes_Alma.Etki_Suresi"), Yapilandirma.getInt("Su_Altinda_Nefes_Alma.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+            if (Arguman.length == 1) {
+                long Saglik_Arttirici_Bekleme_Suresi;
+                Saglik_Arttirici_Bekleme_Suresi = Yapilandirma.getInt("Saglik_Arttirici.Bekleme_Suresi");
+            	if (Yapilandirma.getBoolean("Saglik_Arttirici.Saglik_Arttirici", true))
+                if (Arguman[0].equalsIgnoreCase("saglikarttirici") || Arguman[0].equalsIgnoreCase("sa")) {
+                	if (Oyuncu.hasPermission("vipplus.saglikarttirici")) {
+            	    if (this.Saglik_Arttirici_Bekleme_Suresi.containsKey(Oyuncu.getName())) {
+            	    	if (!Oyuncu.isOp()) {
+            	    	Saglik_Arttirici_Bekleme_Suresi = ((Long)this.Saglik_Arttirici_Bekleme_Suresi.get(Oyuncu.getName())).longValue() / 1000L + Saglik_Arttirici_Bekleme_Suresi - (System.currentTimeMillis() / 1000L);
+            	        if (Saglik_Arttirici_Bekleme_Suresi > 0L) {
+            	        	if (Yapilandirma.getBoolean("Saglik_Arttirici.Bekleme_Sure_Mesaji", true)) {
+            	          Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + ChatColor.RED + "Saglik Arttirici Kullanabilmek Icin Lutfen " + ChatColor.GREEN + Saglik_Arttirici_Bekleme_Suresi + ChatColor.RED + " Saniye Bekleyiniz!");
+            	        	}
+              	          return true;
+            	        }
+            	    }
+            	    }
+            	    this.Saglik_Arttirici_Bekleme_Suresi.put(Oyuncu.getName(), Long.valueOf(System.currentTimeMillis()));
+            	    if (Yapilandirma.getBoolean("Saglik_Arttirici.Etki_Mesaji", true)) {
+            	    Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Saglik_Arttirici_Etkin_Mesaji);
+            	    }
+                	if (Yapilandirma.getBoolean("Saglik_Arttirici.Efekt", true)) {
+                    	Oyuncu.getWorld().playEffect(Oyuncu.getPlayer().getLocation(), Effect.valueOf(Yapilandirma.getString("Saglik_Arttirici.Efekt_Cesiti")), 1);
+                    	}
+                    	if (Yapilandirma.getBoolean("Saglik_Arttirici.Ses_Efekt", true)) {
+                    	Oyuncu.getWorld().playSound(Oyuncu.getPlayer().getLocation(), Sound.valueOf(Yapilandirma.getString("Saglik_Arttirici.Ses_Efekti")), Yapilandirma.getInt("Saglik_Arttirici.Ses_Etki_Alani"), Yapilandirma.getInt("Saglik_Arttirici.Ses_Seviyesi"));
+                	}
+                    Oyuncu.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, Yapilandirma.getInt("Saglik_Arttirici.Etki_Suresi"), Yapilandirma.getInt("Saglik_Arttirici.Etki_Gucu")));
+                	}
+        			else {
+        				Oyuncu.sendMessage(DilDosyasi.On_Ek.toString() + DilDosyasi.Yetkiniz_Yok_Mesaji);
+        				return true;
+        			}
+                }
+            }
+        }
+		return false;
+	}
+}
